@@ -1,0 +1,64 @@
+library(tidyverse)
+straintype_index <- straintype_index %>%
+  remove_rownames %>%
+  column_to_rownames(var="SITE")
+
+## species diversity https://grunwaldlab.github.io/analysis_of_microbiome_community_data_in_r/07--diversity_stats.html
+#alpha
+#shannon ##higher = more diverse
+library(vegan)
+shann_strain <- diversity(straintype_index[-1], index="shannon")
+shann_strain
+plot(shann_strain)
+
+#simpson ##higher = more diverse
+library(vegan)
+simp_strain <- diversity(straintype_index[-1], index="simpson")
+simp_strain
+plot(simp_strain)
+
+##beta diversity
+bray_strain <- vegdist(straintype_index, method ="bray")
+bray_strain
+jaccard_strain <- vegdist(straintype_index, method ="jaccard")
+jaccard_strain
+
+set.seed(123)
+nmds = metaMDS(straintype_index, distance = "bray")
+nmds
+
+plot(nmds)
+
+##upgma
+##source https://stackoverflow.com/questions/64325620/r-pairwise-matrix-of-the-number-of-characters-that-differ-among-strings
+strain1 = c("XXXJ",	"XAXJ",	"BCBB",	"BCBD",	"BCXJ",	"BAXJ",	"BCBL",	"DCAD",	"CCBD",	"CCXJ",	"DCBD",	"DXBJ",	"BXBD",	"BCXD",	"DDBJ",	"BDBJ",	"BCBJ",	"BCAD",	"DDBD",	"CXXJ",	"BBXJ",	"BCBC",	"CDBD",	"BCAJ",	"BXXJ",	"XXXD",	"DAXJ",	"CAXJ",	"XCXJ",	"CBXJ",	"XBXJ",	"CDBJ",	"BDBD",	"BCBK",	"DCBJ",	"BBBB",	"BBBK",	"DCXJ")
+library(stringdist)
+strainout <- as.matrix(stringdistmatrix(strain1))
+dimnames(strainout) <- list(strain1, strain1)
+
+##source https://www.rdocumentation.org/packages/phangorn/versions/2.4.0/topics/upgma
+library(phangorn)
+straintree <- upgma(strainout)
+plot(straintree)
+
+
+strain_confirmed = c("BCBB", "BCBD", "BCBJ", "BCXJ",  "BXBD", "CDBD", "XAXJ")
+library(stringdist)
+strain_must <- as.matrix(stringdistmatrix(strain_confirmed))
+dimnames(strain_must) <- list(strain_confirmed, strain_confirmed)
+
+strain_confirmed_real = c("BCAD",	"BCBB",	"BCBC", "BCBD",	"BCBK",	"BCBL",	"BCXD",	"BDBD",	"BXBB",	"CDBJ",	"DCAD",	"DCBJ",	"DDBJ",	"DXBJ")
+library(stringdist)
+strain_muster <- as.matrix(stringdistmatrix(strain_confirmed_real))
+dimnames(strain_muster) <- list(strain_confirmed_real, strain_confirmed_real)
+
+library(phangorn)
+straintree2 <- upgma(strain_muster)
+plot(straintree2)
+
+#amova
+library("poppr")
+data("straintype_index")
+strata(straintype_index) <- data.frame(other(straintype_index)$population_hierarchy)
+straintype_index_clone <- as.genclone(straintype_index)
+straintype_index_clone
